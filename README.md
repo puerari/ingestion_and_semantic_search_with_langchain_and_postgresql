@@ -36,6 +36,12 @@ Para configurar o ambiente e instalar as dependências do projeto, siga os passo
    ```
    - Abra o arquivo `.env` e substitua os valores pelas suas chaves de API reais obtidas conforme instruções abaixo
 
+4. **Instalar PostgreSQL via Docker:**
+
+   ```bash
+   docker-compose up -d
+   ```
+
 ## Requisitos para Execução dos Códigos
 
 Para executar os códigos, é necessário criar chaves de API (API Keys) para os serviços da OpenAI ou do Google Gemini.
