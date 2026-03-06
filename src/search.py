@@ -26,10 +26,12 @@ def semantic_search(query: str, k: int = 10) -> List[Tuple[Document, float]]:
     # Configurar embeddings
     if os.getenv("GOOGLE_API_KEY"):
         embeddings = GoogleGenerativeAIEmbeddings(
-            model=os.getenv("GOOGLE_EMBEDDING_MODEL", "models/embedding-001")
+            model=os.getenv("GOOGLE_EMBEDDING_MODEL", "models/gemini-embedding-001")
         )
     elif os.getenv("OPENAI_API_KEY"):
-        embeddings = OpenAIEmbeddings(model=os.getenv("OPENAI_EMBEDDING_MODEL", "text-embedding-3-small"))
+        embeddings = OpenAIEmbeddings(
+            model=os.getenv("OPENAI_EMBEDDING_MODEL", "text-embedding-3-small")
+        )
     else:
         raise RuntimeError(f"Set 'GOOGLE_API_KEY' or 'OPENAI_API_KEY' environment variable")
 

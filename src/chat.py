@@ -3,21 +3,16 @@ import os
 import sys
 from typing import List, Tuple
 from dotenv import load_dotenv
-
+from search import semantic_search
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_openai import ChatOpenAI
 from langchain_core.documents import Document
 from langchain_core.prompts import PromptTemplate
 
-# Importar função de busca do módulo search
-from search import semantic_search
-
-# Carregar variáveis de ambiente
 load_dotenv()
 
 # Verificar variáveis de ambiente necessárias
-required_vars = ["PGVECTOR_URL", "PGVECTOR_COLLECTION"]
-for var in required_vars:
+for var in ["PGVECTOR_URL", "PGVECTOR_COLLECTION"]:
     if not os.getenv(var):
         raise RuntimeError(f"Environment variable {var} is not set")
 
@@ -26,40 +21,31 @@ has_google = bool(os.getenv("GOOGLE_API_KEY"))
 has_openai = bool(os.getenv("OPENAI_API_KEY"))
 
 if not has_google and not has_openai:
-    raise RuntimeError("At least one LLM provider should be configured: GOOGLE_API_KEY ou OPENAI_API_KEY")
-
-default_provider = 'google' if has_google else 'openai'
+    raise RuntimeError("At least one LLM provider should be configured: GOOGLE_API_KEY or OPENAI_API_KEY")
 
 class ChatRAG:
     def __init__(self):
-        # Inicializa o sistema de chat RAG.
-        # Configurar provedor
-        self.provider = default_provider
-
-        # Configurar LLM baseado no provedor
-        if self.provider == "google":
-            model = os.getenv("GOOGLE_MODEL", "gemini-1.5-flash")
-            if not os.getenv("GOOGLE_API_KEY"):
-                raise RuntimeError("GOOGLE_API_KEY não está configurada")
-            self.llm = ChatGoogleGenerativeAI(
-                model=model,
-                temperature=0.1,
-                max_tokens=1000
-            )
+        if has_google:
             self.provider_name = "Gemini"
-        elif self.provider == "openai":
-            model = os.getenv("OPENAI_MODEL", "gpt-4o-mini")
-            if not os.getenv("OPENAI_API_KEY"):
-                raise RuntimeError("OPENAI_API_KEY não está configurada")
-            self.llm = ChatOpenAI(
-                model=model,
+            if not os.getenv("GOOGLE_API_KEY"):
+                raise RuntimeError("GOOGLE_API_KEY is not configured!")
+
+            self.llm = ChatGoogleGenerativeAI(
+                model=os.getenv("GOOGLE_MODEL", "gemini-2.5-flash-lite"),
                 temperature=0.1,
                 max_tokens=1000
             )
-            self.provider_name = "OpenAI"
         else:
-            raise RuntimeError(f"Provedor não suportado: {self.provider}")
-        
+            self.provider_name = "OpenAI"
+            if not os.getenv("OPENAI_API_KEY"):
+                raise RuntimeError("OPENAI_API_KEY is not configured!")
+
+            self.llm = ChatOpenAI(
+                model=os.getenv("OPENAI_MODEL", "gpt-5-nano"),
+                temperature=0.1,
+                max_tokens=1000
+            )
+
         # Template de prompt
         self.prompt_template = PromptTemplate(
             input_variables=["context", "question"],
@@ -90,8 +76,7 @@ Resposta:"""
             Lista de tuplas (documento, score)
         """
         try:
-            results = semantic_search(query, k)
-            return results
+            return semantic_search(query, k)
         except Exception as e:
             print(f"Erro na busca vetorial: {e}")
             return []
@@ -145,15 +130,15 @@ Resposta:"""
     def run_chat(self):
         print("=" * 60)
         print(f"🤖 Chat RAG com {self.provider_name} e PostgreSQL")
-        print("Digite 'sair', 'exit' ou 'quit' para encerrar")
+        print("Digite 'exit' para encerrar")
         print("=" * 60)
         while True:
             try:
                 # Obter entrada do usuário
-                question = input("\n❓ Faça sua pergunta: ").strip()
+                question = input("\n❓ Faça sua pergunta (exit para sair): ").strip()
                 
                 # Verificar comando de saída
-                if question.lower() in ['sair', 'exit', 'quit']:
+                if question.lower() == 'exit':
                     print("\n👋 Até logo!")
                     break
                 

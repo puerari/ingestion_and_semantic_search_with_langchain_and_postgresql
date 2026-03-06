@@ -38,12 +38,18 @@ enriched = [
 
 ids = [f"doc-{i}" for i in range(len(enriched))]
 
-if os.getenv("GOOGLE_API_KEY"):
+has_google = bool(os.getenv("GOOGLE_API_KEY"))
+has_openai = bool(os.getenv("OPENAI_API_KEY"))
+
+if not has_google and not has_openai:
+    raise RuntimeError("At least one LLM provider should be configured: GOOGLE_API_KEY or OPENAI_API_KEY")
+
+if has_google:
+    model = "Gemini Embedding"
     embeddings = GoogleGenerativeAIEmbeddings(model=os.getenv("GOOGLE_EMBEDDING_MODEL", "models/embedding-001"))
-elif os.getenv("OPENAI_API_KEY"):
-    embeddings = OpenAIEmbeddings(model=os.getenv("OPENAI_EMBEDDING_MODEL", "text-embedding-3-small"))
 else:
-    raise RuntimeError(f"Set 'GOOGLE_API_KEY' or 'OPENAI_API_KEY' environment variable")
+    model = "OpenAI Embedding"
+    embeddings = OpenAIEmbeddings(model=os.getenv("OPENAI_EMBEDDING_MODEL", "text-embedding-3-small"))
 
 store = PGVector(
     embeddings=embeddings,
@@ -54,4 +60,4 @@ store = PGVector(
 
 store.add_documents(documents=enriched, ids=ids)
 
-print('PDF Ingested!')
+print(f'PDF Ingested by {model}!')
